@@ -1,4 +1,5 @@
 // Importing
+import cors from "cors";
 import express from "express";
 import mongoose from "mongoose";
 import Messages from "./dbMessages.js";
@@ -18,6 +19,7 @@ const pusher = new Pusher({
 
 // Middleware
 app.use(express.json());
+app.use(cors());
 
 // DB Config
 const connection_url = "mongodb+srv://admin:vI9ZHxHLvVupTyQo@cluster0.iixou.mongodb.net/whatsappdb?retryWrites=true&w=majority";
