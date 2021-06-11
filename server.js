@@ -2,10 +2,19 @@
 import express from "express";
 import mongoose from "mongoose";
 import Messages from "./dbMessages.js";
+import Pusher from "pusher";
 
 // App Config
 const app = express();
 const port = process.env.PORT || 9000;
+
+const pusher = new Pusher({
+    appId: "1217947",
+    key: "750cf084b90b10c2bb4f",
+    secret: "38f5119a83edaa7d645e",
+    cluster: "eu",
+    useTLS: true
+});
 
 // Middleware
 app.use(express.json());
@@ -19,7 +28,30 @@ mongoose.connect(connection_url, {
     useUnifiedTopology: true
 });
 
-// ????
+const db = mongoose.connection;
+
+db.once("open", () => {
+    console.log("DB connected");
+
+    const msgCollection = db.collection("messagecontents");
+    const changeStream = msgCollection.watch();
+
+    changeStream.on("change", (change) => {
+        console.log("A change occurred", change);
+
+        if (change.operationType === "insert") {
+            const messageDetails = change.fullDocument;
+            pusher.trigger("messages", "inserted",
+                {
+                    name: messageDetails.name,
+                    message: messageDetails.message
+                }
+            );
+        } else {
+            console.log("Error triggering Pusher");
+        }
+    });
+});
 
 // API Routes
 app.get("/", (req, res) => res.status(200).send("hello world"));
